@@ -408,34 +408,34 @@ class FileIndex:
 
         idx = siblings.index(part)
 
-        # Get before items (3 before current)
-        before_items = siblings[max(0, idx - 3):idx]
+        # Get before items (dir_context before current)
+        before_items = siblings[max(0, idx - (self.args.dir_context-1)):idx]
         before_lines = []
-        if max(0, idx - 3) > 0:
+        if max(0, idx - (self.args.dir_context-1)) > 0:
             before_lines.append("   ...")
         for item in before_items:
             item_path = os.path.join(parent_path, item)
             before_lines.append(f"   {item}")
 
-        # Pad before_lines to exactly 3 items
-        while len(before_lines) < 4:
+        # Pad before_lines to exactly dir_context items
+        while len(before_lines) < self.args.dir_context:
             before_lines.insert(0, "")
 
         # Current item (highlight with brackets)
         current_line = f" / {part}"
 
-        # Get after items (3 after current)
-        after_items = siblings[idx + 1:min(len(siblings), idx + 4)]
+        # Get after items (dir_context after current)
+        after_items = siblings[idx + 1:min(len(siblings), idx + self.args.dir_context)]
         after_lines = []
         for item in after_items:
             item_path = os.path.join(parent_path, item)
             after_lines.append(f"   {item}")
 
-        if idx + 4 < len(siblings):
+        if idx + self.args.dir_context < len(siblings):
             after_lines.append("   ...")
 
-        # Pad after_lines to exactly 3 items
-        while len(after_lines) < 4:
+        # Pad after_lines to exactly dir_context items
+        while len(after_lines) < self.args.dir_context:
             after_lines.append("")
 
         res = before_lines + [current_line] + after_lines
@@ -452,7 +452,7 @@ class FileIndex:
         result = k3fmt.format_line(segments, sep='', aligns='llllllllllllllllll')
         result = result.split('\n')
         for idx, line in enumerate(result):
-            if idx == 4:
+            if idx == self.args.dir_context:
                 print(k3color.white(f"  [{i+1}] {line}"))
             else:
                 print(k3color.cyan("      " + line))
@@ -465,7 +465,8 @@ class FileIndex:
             return
 
         # Collect context for each level
-        segments = [['', '', '', '', self.base_path, '', '', '', '']]
+
+        segments = [ ([''] * self.args.dir_context) +[os.path.basename(self.base_path) ] + ([''] * self.args.dir_context)]
         parent_path = self.base_path
 
         for part in path_parts:
@@ -487,6 +488,8 @@ def main():
     parser.add_argument("path", help="Directory path to scan and deduplicate")
     parser.add_argument("--load-existing", action="store_true",
                        help="Load existing index instead of rebuilding")
+    parser.add_argument("--dir-context", type=int, default=6,
+                       help="the sibling context to show for each directory")
     parser.add_argument("--threshold", type=float, default=0.8,
                        help="Similarity threshold for directory comparison (default: 0.8)")
 
