@@ -33,8 +33,8 @@ class MinHashSignature:
         valid_buckets = 0
         
         for i in range(self.buckets):
-            # Only count buckets that have values in both signatures
-            if self.min_hashes[i] is not None and other.min_hashes[i] is not None:
+            # Only count buckets where at least one signature has a value
+            if self.min_hashes[i] is not None or other.min_hashes[i] is not None:
                 valid_buckets += 1
                 if self.min_hashes[i] == other.min_hashes[i]:
                     matches += 1
@@ -68,7 +68,29 @@ def compute_similarity(set_a: Union[List[str], Set[str]],
 
 
 if __name__ == "__main__":
-    # Example usage with larger datasets
+    # Test 1: Small dataset (original test case)
+    print("=== Small Dataset Test ===")
+    set_a = ["file1.txt", "file2.txt", "file3.txt", "file4.txt"]
+    set_b = ["file2.txt", "file3.txt", "file5.txt", "file6.txt"]
+    
+    print(f"Set A: {set_a}")
+    print(f"Set B: {set_b}")
+    print(f"Intersection: {len(set(set_a) & set(set_b))} files")
+    print(f"Union: {len(set(set_a) | set(set_b))} files")
+    
+    sig_a = create_signature(set_a, buckets=128)
+    sig_b = create_signature(set_b, buckets=128)
+    print("sig_a:", sig_a)
+    print("sig_b:", sig_b)
+    
+    similarity = sig_a.compute_similarity(sig_b)
+    actual_similarity = len(set(set_a) & set(set_b)) / len(set(set_a) | set(set_b))
+    print(f"MinHash similarity: {similarity:.2%}")
+    print(f"Actual similarity: {actual_similarity:.2%}")
+    print()
+    
+    # Test 2: Larger dataset
+    print("=== Large Dataset Test ===")
     import random
     
     # Generate larger test sets
@@ -83,18 +105,10 @@ if __name__ == "__main__":
     print(f"Intersection: {len(set(set_a) & set(set_b))} files")
     print(f"Union: {len(set(set_a) | set(set_b))} files")
     
-    # Method 1: Direct computation
-    similarity = compute_similarity(set_a, set_b, buckets=64)
-    print(f"MinHash similarity: {similarity:.2%}")
-    
-    # Method 2: Create signatures separately
     sig_a = create_signature(set_a, buckets=64)
     sig_b = create_signature(set_b, buckets=64)
-    print("sig_a:", sig_a)
-    print("sig_b:", sig_b)
-    similarity = sig_a.compute_similarity(sig_b)
-    print(f"MinHash similarity: {similarity:.2%}")
     
-    # Actual Jaccard similarity for comparison
+    similarity = sig_a.compute_similarity(sig_b)
     actual_similarity = len(set(set_a) & set(set_b)) / len(set(set_a) | set(set_b))
+    print(f"MinHash similarity: {similarity:.2%}")
     print(f"Actual similarity: {actual_similarity:.2%}")
